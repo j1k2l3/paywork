@@ -4,51 +4,86 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>급여관리</title>
+<title>급여관리 시스템</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
+
 body{
-    font-family:Arial,sans-serif;
-    max-width:800px;
-    margin:30px auto;
-    padding:20px;
+    background:#f3f6fa;
+    font-family:'Malgun Gothic',sans-serif;
+    max-width:900px;
+    margin:0 auto;
+    padding:30px;
+}
+
+.container{
+    background:#fff;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 3px 15px rgba(0,0,0,0.1);
 }
 
 h1{
     text-align:center;
+    color:#2c3e50;
 }
 
 label{
     display:block;
-    margin-top:10px;
+    margin-top:15px;
+    font-weight:bold;
 }
 
 input{
     width:100%;
-    padding:10px;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
     box-sizing:border-box;
 }
 
 button{
     width:100%;
-    padding:12px;
+    padding:14px;
     margin-top:10px;
+    border:none;
+    border-radius:10px;
+    background:#0078d7;
+    color:white;
     cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#005fb8;
 }
 
 .result{
-    margin-top:20px;
-    padding:20px;
-    background:#f5f5f5;
-    border-radius:10px;
+    margin-top:30px;
 }
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td{
+    padding:8px 0;
+}
+
 </style>
 </head>
 <body>
 
+<div class="container">
+
 <h1>급여관리 시스템</h1>
+
+<label>회사명</label>
+<input id="company" value="하우징파트너스정">
 
 <label>지급월</label>
 <input id="month" placeholder="2026-10">
@@ -71,11 +106,13 @@ CSV 다운로드
 </button>
 
 <button onclick="downloadPDF()">
-PDF 다운로드
+급여명세서 PDF 다운로드
 </button>
 
 <div id="result" class="result">
 계산 결과가 표시됩니다.
+</div>
+
 </div>
 
 <script>
@@ -89,112 +126,199 @@ const RATE = {
 
 let payroll = null;
 
+function formatMonth(month){
+
+    if(!month) return "";
+
+    const parts = month.split("-");
+
+    return `${parts[0]}년 ${parseInt(parts[1])}월`;
+}
+
 function calculate(){
 
+    const company =
+        document.getElementById("company").value;
+
     const month =
-      document.getElementById("month").value;
+        document.getElementById("month").value;
 
     const name =
-      document.getElementById("name").value;
+        document.getElementById("name").value;
 
     const salary =
-      Number(document.getElementById("salary").value);
+        Number(document.getElementById("salary").value);
 
     const meal =
-      Number(document.getElementById("meal").value);
+        Number(document.getElementById("meal").value);
 
     const total =
-      salary + meal;
+        salary + meal;
 
     const pension =
-      Math.round(salary * RATE.pension);
+        Math.round(salary * RATE.pension);
 
     const health =
-      Math.round(salary * RATE.health);
+        Math.round(salary * RATE.health);
 
     const care =
-      Math.round(health * RATE.care);
+        Math.round(health * RATE.care);
 
     const employment =
-      Math.round(salary * RATE.employment);
+        Math.round(salary * RATE.employment);
 
     const deduction =
-      pension +
-      health +
-      care +
-      employment;
+        pension +
+        health +
+        care +
+        employment;
 
     const net =
-      total - deduction;
+        total - deduction;
 
     payroll = {
-      month,
-      name,
-      salary,
-      meal,
-      total,
-      pension,
-      health,
-      care,
-      employment,
-      deduction,
-      net
+        company,
+        month,
+        name,
+        salary,
+        meal,
+        total,
+        pension,
+        health,
+        care,
+        employment,
+        deduction,
+        net
     };
 
     document.getElementById("result").innerHTML = `
-      <h3>급여 계산 결과</h3>
 
-      지급월 :
-      ${month}<br>
+    <div id="payrollSlip"
+    style="
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 3px 15px rgba(0,0,0,.1);
+    ">
 
-      성명 :
-      ${name}<br><br>
+    <h2 style="text-align:center;">
+    ${company}
+    </h2>
 
-      기본급 :
-      ${salary.toLocaleString()} 원<br>
+    <h3 style="text-align:center;">
+    급여명세서
+    </h3>
 
-      식대 :
-      ${meal.toLocaleString()} 원<br><br>
+    <hr>
 
-      총지급액 :
-      ${total.toLocaleString()} 원<br><br>
+    <p>
+    <strong>지급월 :</strong>
+    ${formatMonth(month)}
+    </p>
 
-      국민연금 :
-      ${pension.toLocaleString()} 원<br>
+    <p>
+    <strong>성명 :</strong>
+    ${name}
+    </p>
 
-      건강보험 :
-      ${health.toLocaleString()} 원<br>
+    <hr>
 
-      장기요양보험 :
-      ${care.toLocaleString()} 원<br>
+    <table>
 
-      고용보험 :
-      ${employment.toLocaleString()} 원<br><br>
+    <tr>
+    <td>기본급</td>
+    <td align="right">
+    ${salary.toLocaleString()}원
+    </td>
+    </tr>
 
-      공제합계 :
-      ${deduction.toLocaleString()} 원<br><br>
+    <tr>
+    <td>식대</td>
+    <td align="right">
+    ${meal.toLocaleString()}원
+    </td>
+    </tr>
 
-      <b style="font-size:20px;color:blue;">
-      실수령액 :
-      ${net.toLocaleString()} 원
-      </b>
+    <tr>
+    <td><strong>총지급액</strong></td>
+    <td align="right">
+    <strong>${total.toLocaleString()}원</strong>
+    </td>
+    </tr>
+
+    </table>
+
+    <hr>
+
+    <table>
+
+    <tr>
+    <td>국민연금</td>
+    <td align="right">
+    ${pension.toLocaleString()}원
+    </td>
+    </tr>
+
+    <tr>
+    <td>건강보험</td>
+    <td align="right">
+    ${health.toLocaleString()}원
+    </td>
+    </tr>
+
+    <tr>
+    <td>장기요양보험</td>
+    <td align="right">
+    ${care.toLocaleString()}원
+    </td>
+    </tr>
+
+    <tr>
+    <td>고용보험</td>
+    <td align="right">
+    ${employment.toLocaleString()}원
+    </td>
+    </tr>
+
+    <tr>
+    <td><strong>공제합계</strong></td>
+    <td align="right">
+    <strong>${deduction.toLocaleString()}원</strong>
+    </td>
+    </tr>
+
+    </table>
+
+    <hr>
+
+    <h2 style="
+    text-align:right;
+    color:#0078d7;
+    ">
+    실수령액 :
+    ${net.toLocaleString()}원
+    </h2>
+
+    </div>
     `;
 }
 
 function downloadCSV(){
 
-    if(!payroll || !payroll.name){
+    if(!payroll){
+
         alert("먼저 계산하세요.");
+
         return;
     }
 
     const csv =
-`지급월,성명,기본급,식대,총지급액,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
-${payroll.month},${payroll.name},${payroll.salary},${payroll.meal},${payroll.total},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
+`회사명,지급월,성명,기본급,식대,총지급액,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
+${payroll.company},${formatMonth(payroll.month)},${payroll.name},${payroll.salary},${payroll.meal},${payroll.total},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
 
     const blob =
       new Blob(
-        ["\uFEFF" + csv],
+        ["\uFEFF"+csv],
         {type:"text/csv;charset=utf-8;"}
       );
 
@@ -205,118 +329,9 @@ ${payroll.month},${payroll.name},${payroll.salary},${payroll.meal},${payroll.tot
       URL.createObjectURL(blob);
 
     link.download =
-      `${payroll.month}_${payroll.name}_급여대장.csv`;
+      `${payroll.company}_${payroll.name}_급여대장.csv`;
 
     link.click();
 }
 
-function downloadPDF(){
-
-    if(!payroll || !payroll.name){
-        alert("먼저 계산하세요.");
-        return;
-    }
-
-    const { jsPDF } =
-      window.jspdf;
-
-    const doc =
-      new jsPDF();
-
-    doc.setFontSize(18);
-
-    doc.text(
-      "Payroll Statement",
-      20,
-      20
-    );
-
-    doc.setFontSize(11);
-
-    let y = 40;
-
-    doc.text(
-      `Month : ${payroll.month}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Name : ${payroll.name}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Salary : ${payroll.salary.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Meal : ${payroll.meal.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Total : ${payroll.total.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Pension : ${payroll.pension.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Health : ${payroll.health.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Care : ${payroll.care.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Employment : ${payroll.employment.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Deduction : ${payroll.deduction.toLocaleString()}`,
-      20,
-      y
-    );
-    y += 10;
-
-    doc.text(
-      `Net Pay : ${payroll.net.toLocaleString()}`,
-      20,
-      y
-    );
-
-    doc.save(
-      `${payroll.month}_${payroll.name}_급여명세서.pdf`
-    );
-}
-
-</script>
-
-</body>
-</html>
+async function 
