@@ -16,12 +16,12 @@ body{
     font-family:'Malgun Gothic',sans-serif;
     max-width:900px;
     margin:0 auto;
-    padding:30px;
+    padding:20px;
 }
 
 .container{
     background:#fff;
-    padding:30px;
+    padding:25px;
     border-radius:20px;
     box-shadow:0 3px 15px rgba(0,0,0,0.1);
 }
@@ -33,11 +33,11 @@ h1{
 
 label{
     display:block;
-    margin-top:15px;
+    margin-top:12px;
     font-weight:bold;
 }
 
-input{
+input,select{
     width:100%;
     padding:12px;
     border:1px solid #ddd;
@@ -62,7 +62,7 @@ button:hover{
 }
 
 .result{
-    margin-top:30px;
+    margin-top:25px;
 }
 
 table{
@@ -72,6 +72,13 @@ table{
 
 td{
     padding:8px 0;
+}
+
+.summary{
+    background:#eef6ff;
+    padding:12px;
+    border-radius:10px;
+    margin-top:15px;
 }
 
 </style>
@@ -84,6 +91,15 @@ td{
 
 <label>회사명</label>
 <input id="company" value="하우징파트너스정">
+
+<label>구분</label>
+<select id="workerType">
+    <option value="ceo">대표이사</option>
+    <option value="employee">직원</option>
+</select>
+
+<label>생년월일</label>
+<input id="birthDate" type="date">
 
 <label>지급월</label>
 <input id="month" placeholder="2026-10">
@@ -118,10 +134,10 @@ CSV 다운로드
 <script>
 
 const RATE = {
-    pension: 0.0475,
-    health: 0.03595,
-    care: 0.1314,
-    employment: 0.009
+    pension:0.0475,
+    health:0.03595,
+    care:0.1314,
+    employment:0.009
 };
 
 let payroll = null;
@@ -135,49 +151,99 @@ function formatMonth(month){
     return `${parts[0]}년 ${parseInt(parts[1])}월`;
 }
 
+function getAge(birthDate){
+
+    if(!birthDate) return 0;
+
+    const today = new Date();
+    const birth = new Date(birthDate);
+
+    let age =
+        today.getFullYear() -
+        birth.getFullYear();
+
+    const monthDiff =
+        today.getMonth() -
+        birth.getMonth();
+
+    if(
+        monthDiff < 0 ||
+        (
+          monthDiff === 0 &&
+          today.getDate() < birth.getDate()
+        )
+    ){
+        age--;
+    }
+
+    return age;
+}
+
 function calculate(){
 
     const company =
-        document.getElementById("company").value;
+      document.getElementById("company").value;
+
+    const workerType =
+      document.getElementById("workerType").value;
+
+    const birthDate =
+      document.getElementById("birthDate").value;
+
+    const age =
+      getAge(birthDate);
 
     const month =
-        document.getElementById("month").value;
+      document.getElementById("month").value;
 
     const name =
-        document.getElementById("name").value;
+      document.getElementById("name").value;
 
     const salary =
-        Number(document.getElementById("salary").value);
+      Number(document.getElementById("salary").value);
 
     const meal =
-        Number(document.getElementById("meal").value);
+      Number(document.getElementById("meal").value);
 
     const total =
-        salary + meal;
+      salary + meal;
+
+    const usePension =
+      workerType === "employee";
+
+    const useEmployment =
+      workerType === "employee" && age < 65;
 
     const pension =
-        Math.round(salary * RATE.pension);
+      usePension
+      ? Math.round(salary * RATE.pension)
+      : 0;
 
     const health =
-        Math.round(salary * RATE.health);
+      Math.round(salary * RATE.health);
 
     const care =
-        Math.round(health * RATE.care);
+      Math.round(health * RATE.care);
 
     const employment =
-        Math.round(salary * RATE.employment);
+      useEmployment
+      ? Math.round(salary * RATE.employment)
+      : 0;
 
     const deduction =
-        pension +
-        health +
-        care +
-        employment;
+      pension +
+      health +
+      care +
+      employment;
 
     const net =
-        total - deduction;
+      total - deduction;
 
     payroll = {
         company,
+        workerType,
+        birthDate,
+        age,
         month,
         name,
         salary,
@@ -193,133 +259,126 @@ function calculate(){
 
     document.getElementById("result").innerHTML = `
 
-    <div id="payrollSlip"
-    style="
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 3px 15px rgba(0,0,0,.1);
-    ">
+<div id="payrollSlip"
+style="
+background:white;
+padding:30px;
+border-radius:15px;
+box-shadow:0 3px 15px rgba(0,0,0,.1);
+">
 
-    <h2 style="text-align:center;">
-    ${company}
-    </h2>
+<h2 style="text-align:center;">
+${company}
+</h2>
 
-    <h3 style="text-align:center;">
-    급여명세서
-    </h3>
+<h3 style="text-align:center;">
+급여명세서
+</h3>
 
-    <hr>
+<hr>
 
-    <p>
-    <strong>지급월 :</strong>
-    ${formatMonth(month)}
-    </p>
+<p><strong>지급월 :</strong> ${formatMonth(month)}</p>
+<p><strong>성명 :</strong> ${name}</p>
+<p><strong>구분 :</strong> ${workerType === "ceo" ? "대표이사" : "직원"}</p>
+<p><strong>만 나이 :</strong> ${age}세</p>
 
-    <p>
-    <strong>성명 :</strong>
-    ${name}
-    </p>
+<div class="summary">
 
-    <hr>
+국민연금 :
+${pension === 0 ? "제외" : "적용"}
 
-    <table>
+<br>
 
-    <tr>
-    <td>기본급</td>
-    <td align="right">
-    ${salary.toLocaleString()}원
-    </td>
-    </tr>
+고용보험 :
+${employment === 0 ? "제외" : "적용"}
 
-    <tr>
-    <td>식대</td>
-    <td align="right">
-    ${meal.toLocaleString()}원
-    </td>
-    </tr>
+</div>
 
-    <tr>
-    <td><strong>총지급액</strong></td>
-    <td align="right">
-    <strong>${total.toLocaleString()}원</strong>
-    </td>
-    </tr>
+<hr>
 
-    </table>
+<table>
 
-    <hr>
+<tr>
+<td>기본급</td>
+<td align="right">${salary.toLocaleString()}원</td>
+</tr>
 
-    <table>
+<tr>
+<td>식대</td>
+<td align="right">${meal.toLocaleString()}원</td>
+</tr>
 
-    <tr>
-    <td>국민연금</td>
-    <td align="right">
-    ${pension.toLocaleString()}원
-    </td>
-    </tr>
+<tr>
+<td><strong>총지급액</strong></td>
+<td align="right">
+<strong>${total.toLocaleString()}원</strong>
+</td>
+</tr>
 
-    <tr>
-    <td>건강보험</td>
-    <td align="right">
-    ${health.toLocaleString()}원
-    </td>
-    </tr>
+</table>
 
-    <tr>
-    <td>장기요양보험</td>
-    <td align="right">
-    ${care.toLocaleString()}원
-    </td>
-    </tr>
+<hr>
 
-    <tr>
-    <td>고용보험</td>
-    <td align="right">
-    ${employment.toLocaleString()}원
-    </td>
-    </tr>
+<table>
 
-    <tr>
-    <td><strong>공제합계</strong></td>
-    <td align="right">
-    <strong>${deduction.toLocaleString()}원</strong>
-    </td>
-    </tr>
+<tr>
+<td>국민연금</td>
+<td align="right">${pension.toLocaleString()}원</td>
+</tr>
 
-    </table>
+<tr>
+<td>건강보험</td>
+<td align="right">${health.toLocaleString()}원</td>
+</tr>
 
-    <hr>
+<tr>
+<td>장기요양보험</td>
+<td align="right">${care.toLocaleString()}원</td>
+</tr>
 
-    <h2 style="
-    text-align:right;
-    color:#0078d7;
-    ">
-    실수령액 :
-    ${net.toLocaleString()}원
-    </h2>
+<tr>
+<td>고용보험</td>
+<td align="right">${employment.toLocaleString()}원</td>
+</tr>
 
-    </div>
-    `;
+<tr>
+<td><strong>공제합계</strong></td>
+<td align="right">
+<strong>${deduction.toLocaleString()}원</strong>
+</td>
+</tr>
+
+</table>
+
+<hr>
+
+<h2 style="
+text-align:right;
+color:#0078d7;
+">
+실수령액 :
+${net.toLocaleString()}원
+</h2>
+
+</div>
+`;
 }
 
 function downloadCSV(){
 
     if(!payroll){
-
         alert("먼저 계산하세요.");
-
         return;
     }
 
     const csv =
-`회사명,지급월,성명,기본급,식대,총지급액,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
-${payroll.company},${formatMonth(payroll.month)},${payroll.name},${payroll.salary},${payroll.meal},${payroll.total},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
+`회사명,지급월,성명,구분,나이,기본급,식대,총지급액,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
+${payroll.company},${formatMonth(payroll.month)},${payroll.name},${payroll.workerType},${payroll.age},${payroll.salary},${payroll.meal},${payroll.total},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
 
     const blob =
       new Blob(
-        ["\uFEFF"+csv],
-        {type:"text/csv;charset=utf-8;"}
+       ["\uFEFF"+csv],
+       {type:"text/csv;charset=utf-8;"}
       );
 
     const link =
@@ -337,9 +396,7 @@ ${payroll.company},${formatMonth(payroll.month)},${payroll.name},${payroll.salar
 async function downloadPDF(){
 
     if(!payroll){
-
         alert("먼저 계산하세요.");
-
         return;
     }
 
