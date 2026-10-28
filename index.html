@@ -150,27 +150,22 @@ function formatMonth(month){
 
     return `${parts[0]}년 ${parseInt(parts[1])}월`;
 }
+    function getAgeAtMonth(birthDate, payMonth){
 
-function getAge(birthDate){
+    if(!birthDate || !payMonth) return 0;
 
-    if(!birthDate) return 0;
-
-    const today = new Date();
     const birth = new Date(birthDate);
+    const target = new Date(payMonth + "-01");
 
     let age =
-        today.getFullYear() -
+        target.getFullYear() -
         birth.getFullYear();
 
-    const monthDiff =
-        today.getMonth() -
-        birth.getMonth();
-
-    if(
-        monthDiff < 0 ||
+    if (
+        target.getMonth() < birth.getMonth() ||
         (
-          monthDiff === 0 &&
-          today.getDate() < birth.getDate()
+            target.getMonth() === birth.getMonth() &&
+            target.getDate() < birth.getDate()
         )
     ){
         age--;
@@ -209,7 +204,7 @@ function calculate(){
       salary + meal;
 
     const usePension =
-      workerType === "employee";
+      workerType === "employee" && age < 60;
 
     const useEmployment =
       workerType === "employee" && age < 65;
