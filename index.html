@@ -181,16 +181,14 @@ function calculate(){
 
     const workerType =
       document.getElementById("workerType").value;
-
     const birthDate =
-      document.getElementById("birthDate").value;
+  document.getElementById("birthDate").value;
 
-    const age =
-      getAge(birthDate);
+const month =
+  document.getElementById("month").value;
 
-    const month =
-      document.getElementById("month").value;
-
+const age =
+  getAgeAtMonth(birthDate, month);
     const name =
       document.getElementById("name").value;
 
