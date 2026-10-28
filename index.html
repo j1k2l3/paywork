@@ -80,6 +80,13 @@ PDF 다운로드
 
 <script>
 
+const RATE = {
+    pension: 0.0475,
+    health: 0.03595,
+    care: 0.1314,
+    employment: 0.009
+};
+
 let payroll = null;
 
 function calculate(){
@@ -100,16 +107,16 @@ function calculate(){
       salary + meal;
 
     const pension =
-      Math.round(salary * 0.045);
+      Math.round(salary * RATE.pension);
 
     const health =
-      Math.round(salary * 0.03545);
+      Math.round(salary * RATE.health);
 
     const care =
-      Math.round(health * 0.1295);
+      Math.round(health * RATE.care);
 
     const employment =
-      Math.round(salary * 0.009);
+      Math.round(salary * RATE.employment);
 
     const deduction =
       pension +
@@ -135,47 +142,59 @@ function calculate(){
     };
 
     document.getElementById("result").innerHTML = `
-        <h3>계산 결과</h3>
+      <h3>급여 계산 결과</h3>
 
-        총지급액 :
-        ${total.toLocaleString()} 원<br><br>
+      지급월 :
+      ${month}<br>
 
-        국민연금 :
-        ${pension.toLocaleString()} 원<br>
+      성명 :
+      ${name}<br><br>
 
-        건강보험 :
-        ${health.toLocaleString()} 원<br>
+      기본급 :
+      ${salary.toLocaleString()} 원<br>
 
-        장기요양보험 :
-        ${care.toLocaleString()} 원<br>
+      식대 :
+      ${meal.toLocaleString()} 원<br><br>
 
-        고용보험 :
-        ${employment.toLocaleString()} 원<br><br>
+      총지급액 :
+      ${total.toLocaleString()} 원<br><br>
 
-        공제합계 :
-        ${deduction.toLocaleString()} 원<br><br>
+      국민연금 :
+      ${pension.toLocaleString()} 원<br>
 
-        <b>
-        실수령액 :
-        ${net.toLocaleString()} 원
-        </b>
+      건강보험 :
+      ${health.toLocaleString()} 원<br>
+
+      장기요양보험 :
+      ${care.toLocaleString()} 원<br>
+
+      고용보험 :
+      ${employment.toLocaleString()} 원<br><br>
+
+      공제합계 :
+      ${deduction.toLocaleString()} 원<br><br>
+
+      <b style="font-size:20px;color:blue;">
+      실수령액 :
+      ${net.toLocaleString()} 원
+      </b>
     `;
 }
 
 function downloadCSV(){
 
-    if(!payroll){
+    if(!payroll || !payroll.name){
         alert("먼저 계산하세요.");
         return;
     }
 
     const csv =
-`지급월,성명,기본급,식대,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
-${payroll.month},${payroll.name},${payroll.salary},${payroll.meal},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
+`지급월,성명,기본급,식대,총지급액,국민연금,건강보험,장기요양보험,고용보험,공제합계,실수령액
+${payroll.month},${payroll.name},${payroll.salary},${payroll.meal},${payroll.total},${payroll.pension},${payroll.health},${payroll.care},${payroll.employment},${payroll.deduction},${payroll.net}`;
 
     const blob =
       new Blob(
-        ["\uFEFF"+csv],
+        ["\uFEFF" + csv],
         {type:"text/csv;charset=utf-8;"}
       );
 
@@ -193,7 +212,7 @@ ${payroll.month},${payroll.name},${payroll.salary},${payroll.meal},${payroll.pen
 
 function downloadPDF(){
 
-    if(!payroll){
+    if(!payroll || !payroll.name){
         alert("먼저 계산하세요.");
         return;
     }
@@ -231,56 +250,63 @@ function downloadPDF(){
     y += 10;
 
     doc.text(
-      `Salary : ${payroll.salary}`,
+      `Salary : ${payroll.salary.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Meal : ${payroll.meal}`,
+      `Meal : ${payroll.meal.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Pension : ${payroll.pension}`,
+      `Total : ${payroll.total.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Health : ${payroll.health}`,
+      `Pension : ${payroll.pension.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Care : ${payroll.care}`,
+      `Health : ${payroll.health.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Employment : ${payroll.employment}`,
+      `Care : ${payroll.care.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Deduction : ${payroll.deduction}`,
+      `Employment : ${payroll.employment.toLocaleString()}`,
       20,
       y
     );
     y += 10;
 
     doc.text(
-      `Net Pay : ${payroll.net}`,
+      `Deduction : ${payroll.deduction.toLocaleString()}`,
+      20,
+      y
+    );
+    y += 10;
+
+    doc.text(
+      `Net Pay : ${payroll.net.toLocaleString()}`,
       20,
       y
     );
