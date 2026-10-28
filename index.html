@@ -334,4 +334,52 @@ ${payroll.company},${formatMonth(payroll.month)},${payroll.name},${payroll.salar
     link.click();
 }
 
-async function 
+async function downloadPDF(){
+
+    if(!payroll){
+
+        alert("먼저 계산하세요.");
+
+        return;
+    }
+
+    const target =
+      document.getElementById("payrollSlip");
+
+    const canvas =
+      await html2canvas(target);
+
+    const imgData =
+      canvas.toDataURL("image/png");
+
+    const { jsPDF } =
+      window.jspdf;
+
+    const pdf =
+      new jsPDF("p","mm","a4");
+
+    const width = 190;
+
+    const height =
+      canvas.height *
+      width /
+      canvas.width;
+
+    pdf.addImage(
+      imgData,
+      "PNG",
+      10,
+      10,
+      width,
+      height
+    );
+
+    pdf.save(
+      `${payroll.company}_${payroll.name}_급여명세서.pdf`
+    );
+}
+
+</script>
+
+</body>
+</html>
